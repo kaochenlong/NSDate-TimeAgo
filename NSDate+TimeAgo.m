@@ -19,9 +19,9 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
     NSDate *now = [NSDate date];
     double deltaSeconds = fabs([self timeIntervalSinceDate:now]);
     double deltaMinutes = deltaSeconds / 60.0f;
-    
+
     int value;
-    
+
     if(deltaSeconds < 60)
     {
         return [self stringFromFormat:@"%%d%@s" withValue:deltaSeconds];
@@ -50,7 +50,7 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
         value = (int)floor(deltaMinutes/(60 * 24 * 30));
         return [self stringFromFormat:@"%%d%@mo" withValue:value];
     }
-    
+
     value = (int)floor(deltaMinutes/(60 * 24 * 365));
     return [self stringFromFormat:@"%%d%@yr" withValue:value];
 }
@@ -60,9 +60,9 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
     NSDate *now = [NSDate date];
     double deltaSeconds = fabs([self timeIntervalSinceDate:now]);
     double deltaMinutes = deltaSeconds / 60.0f;
-    
+
     int minutes;
-    
+
     if(deltaSeconds < 5)
     {
         return NSDateTimeAgoLocalizedStrings(@"Just now");
@@ -119,7 +119,7 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
     {
         return NSDateTimeAgoLocalizedStrings(@"Last year");
     }
-    
+
     minutes = (int)floor(deltaMinutes/(60 * 24 * 365));
     return [self stringFromFormat:@"%%d %@years ago" withValue:minutes];
 }
@@ -132,7 +132,7 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
     NSDateComponents *components = [calendar components:
                                     NSCalendarUnitYear|
                                     NSCalendarUnitMonth|
-                                    NSCalendarUnitWeekOfYear|
+                                    NSCalendarUnitWeekday|
                                     NSCalendarUnitDay|
                                     NSCalendarUnitHour|
                                     NSCalendarUnitMinute|
@@ -140,7 +140,7 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
                                                fromDate:self
                                                  toDate:now
                                                 options:0];
-    
+
     if (components.year >= 1)
     {
         if (components.year == 1)
@@ -193,23 +193,21 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
     {
         return NSDateTimeAgoLocalizedStrings(@"Just now");
     }
-    
+
     // between 5 and 59 seconds ago
     return [self stringFromFormat:@"%%d %@seconds ago" withValue:components.second];
 }
-
-
 
 - (NSString *)dateTimeUntilNow
 {
     NSDate * now = [NSDate date];
     NSCalendar *calendar = [NSCalendar currentCalendar];
-    
-    NSDateComponents *components = [calendar components:NSCalendarUnitHour
+
+    NSDateComponents *components = [calendar components:NSCalendarUnitDay
                                                fromDate:self
                                                  toDate:now
                                                 options:0];
-    
+
     if (components.hour >= 6) // if more than 6 hours ago, change precision
     {
         NSInteger startDay = [calendar ordinalityOfUnit:NSCalendarUnitDay
@@ -218,7 +216,7 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
         NSInteger endDay = [calendar ordinalityOfUnit:NSCalendarUnitDay
                                                inUnit:NSCalendarUnitEra
                                               forDate:now];
-        
+
         NSInteger diffDays = endDay - startDay;
         if (diffDays == 0) // today!
         {
@@ -243,10 +241,10 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
         }
         else
         {
-            NSInteger startWeek = [calendar ordinalityOfUnit:NSCalendarUnitWeekOfYear
+            NSInteger startWeek = [calendar ordinalityOfUnit:NSCalendarUnitWeekday
                                                       inUnit:NSCalendarUnitEra
                                                      forDate:self];
-            NSInteger endWeek = [calendar ordinalityOfUnit:NSCalendarUnitWeekOfYear
+            NSInteger endWeek = [calendar ordinalityOfUnit:NSCalendarUnitWeekday
                                                     inUnit:NSCalendarUnitEra
                                                    forDate:now];
             NSInteger diffWeeks = endWeek - startWeek;
@@ -296,7 +294,7 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
             }
         }
     }
-    
+
     // anything else uses "time ago" precision
     return [self dateTimeAgo];
 }
@@ -318,7 +316,7 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
 {
     if (fabs([self timeIntervalSinceDate:[NSDate date]]) <= limit)
         return [self timeAgo];
-    
+
     return [NSDateFormatter localizedStringFromDate:self
                                           dateStyle:dFormatter
                                           timeStyle:tFormatter];
@@ -346,7 +344,7 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
  (Ex: "%d _seconds ago" for "%d секунды назад", "%d __seconds ago" for "%d секунда назад",
  and default format without underscore %d seconds ago" for "%d секунд назад")
  Updated : 12/12/2012
- 
+
  Note    : This method must be used for all languages that have specific translation rules.
  Using method argument "value" you must define all possible conditions language have for translation
  and return set of underscores ("_") as it is an ID for locale format. No underscore ("") means default locale format;
@@ -354,19 +352,19 @@ NSLocalizedStringFromTableInBundle(key, @"NSDateTimeAgo", [NSBundle bundleWithPa
 -(NSString *)getLocaleFormatUnderscoresWithValue:(double)value
 {
     NSString *localeCode = [[NSLocale preferredLanguages] objectAtIndex:0];
-    
+
     // Russian (ru)
     if([localeCode isEqual:@"ru"]) {
         int XY = (int)floor(value) % 100;
         int Y = (int)floor(value) % 10;
-        
+
         if(Y == 0 || Y > 4 || (XY > 10 && XY < 15)) return @"";
         if(Y > 1 && Y < 5 && (XY < 10 || XY > 20))  return @"_";
         if(Y == 1 && XY != 11)                      return @"__";
     }
-    
+
     // Add more languages here, which are have specific translation rules...
-    
+
     return @"";
 }
 
